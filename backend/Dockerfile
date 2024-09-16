@@ -15,3 +15,6 @@ RUN pipenv sync --dev --system --verbose --extra-pip-args="--prefer-binary"
 
 # Expose the port the app runs on
 EXPOSE 8000
+
+# Run the FastAPI server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

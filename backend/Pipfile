@@ -8,11 +8,16 @@ verify_ssl = true
 pytest = ">=8.3.2"
 
 [packages]
-fastapi = "*"
-langchain = "*"
-openai = "*"
-langchain_community = "*"
-langchain-openai = "*"
+# FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints.
+fastapi = ">=0.112.2"
+# langchain is a Python library for implementing language chains
+langchain = ">=0.3.0"
+# openai is the OpenAI Python client library
+openai = ">=1.45.1"
+# langchain-community is a Python library for implementing language chains with community models
+langchain-community = ">=0.3.0"
+# langchain-openai is a Python library for implementing language chains with OpenAI
+langchain-openai = ">=0.2.0"
 # uvicorn is a lightning-fast ASGI server implementation, using uvloop and httptools.
 uvicorn = ">=0.30.6"
 
