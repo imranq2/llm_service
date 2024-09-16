@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+uvicorn = "*"
+
+[packages]
+fastapi = "*"
+langchain = "*"
+openai = "*"
+uvicorn = "*"
+langchain_community = "*"
+langchain-openai = "*"
+
+[requires]
+python_version = "3.12"

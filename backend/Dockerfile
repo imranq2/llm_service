@@ -1,17 +1,17 @@
 # Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
+# Install pipenv, a tool for managing Python project dependencies
+RUN pip install pipenv
+
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy the current directory contents into the container
 COPY . .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pipenv install --dev --verbose --extra-pip-args="--prefer-binary"
+RUN #pipenv sync --dev --system --verbose --extra-pip-args="--prefer-binary"
 
 # Expose the port the app runs on
 EXPOSE 8000
-
-# Command to run the FastAPI app with WebSocket support
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
