@@ -70,6 +70,9 @@ function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && sendMessage()} // Send message on Enter key
+          multiline  // Allow multiple lines
+          minRows={2}   // Minimum number of rows
+          maxRows={5}   // Maximum number of rows
         />
         <Button
           variant="contained"
