@@ -10,8 +10,8 @@ WORKDIR /usr/src/llm_service/
 COPY . .
 
 # Install dependencies
-RUN pipenv install --dev --verbose --extra-pip-args="--prefer-binary"
-RUN #pipenv sync --dev --system --verbose --extra-pip-args="--prefer-binary"
+#RUN pipenv install --dev --verbose --extra-pip-args="--prefer-binary"
+RUN pipenv sync --dev --system --verbose --extra-pip-args="--prefer-binary"
 
 # Expose the port the app runs on
 EXPOSE 8000

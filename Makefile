@@ -1,3 +1,12 @@
+
+.PHONY: Pipfile.lock
+Pipfile.lock: build_backend
+	docker compose run --rm --name llm_service_shell backend /bin/bash -c "rm -f Pipfile.lock && pipenv lock --dev"
+
+update: down Pipfile.lock  ## Updates all the packages using Pipfile
+	make build_backend && \
+	make up
+
 up:
 	docker-compose up --build
 

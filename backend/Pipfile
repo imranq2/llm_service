@@ -4,15 +4,17 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-uvicorn = "*"
+# pytest is a framework that makes it easy to write small tests, yet scales to support complex functional testing for applications and libraries.
+pytest = ">=8.3.2"
 
 [packages]
 fastapi = "*"
 langchain = "*"
 openai = "*"
-uvicorn = "*"
 langchain_community = "*"
 langchain-openai = "*"
+# uvicorn is a lightning-fast ASGI server implementation, using uvloop and httptools.
+uvicorn = ">=0.30.6"
 
 [requires]
 python_version = "3.12"
