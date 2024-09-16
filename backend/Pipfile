@@ -19,7 +19,7 @@ langchain-community = ">=0.3.0"
 # langchain-openai is a Python library for implementing language chains with OpenAI
 langchain-openai = ">=0.2.0"
 # uvicorn is a lightning-fast ASGI server implementation, using uvloop and httptools.
-uvicorn = ">=0.30.6"
+uvicorn = { version = ">=0.30.6", extras = ["standard"] }
 
 [requires]
 python_version = "3.12"
