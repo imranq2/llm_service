@@ -2,6 +2,8 @@ version: '3'
 services:
   backend:
     build: ./backend
+    volumes:
+    - ./backend/:/usr/src/llm_service/
     ports:
       - "8000:8000"
 

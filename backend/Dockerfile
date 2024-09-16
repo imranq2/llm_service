@@ -5,7 +5,7 @@ FROM python:3.12-slim
 RUN pip install pipenv
 
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /usr/src/llm_service/
 
 COPY . .
 
