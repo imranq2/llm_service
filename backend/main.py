@@ -1,8 +1,9 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from langchain_community.llms.OpenAI import OpenAI
-from langchain.chains.ConversationChain import ConversationChain
 
 import asyncio
+
+from langchain.chains.conversation.base import ConversationChain
+from langchain_community.llms.openai import OpenAI
 
 app = FastAPI()
 
