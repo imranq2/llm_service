@@ -1,9 +1,23 @@
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from langchain.chains.conversation.base import ConversationChain
 from langchain_core.messages import HumanMessage
 
 from langchain_openai import OpenAI
+from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
+from starlette.requests import Request
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Allows your frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Initialize LangChain conversation chain
 model = OpenAI(temperature=0.9)
@@ -25,6 +39,8 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
 
 with_message_history = RunnableWithMessageHistory(model, get_session_history)
 
+conversation = ConversationChain(llm=model)
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -45,16 +61,18 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Client disconnected")
 
 
-async def stream_response(user_input: str):
+async def stream_response(user_input: str) -> AsyncGenerator[str, None]:
     print(f"Received user input: {user_input}")
 
-    config = {"configurable": {"session_id": "abc2"}}
+    response: str = model.invoke([HumanMessage(content=user_input)])
 
-    response = with_message_history.invoke(
-        [HumanMessage(content=user_input)],
-        config=config,
-    )
-
+    # config = {"configurable": {"session_id": "abc2"}}
+    #
+    # response = with_message_history.invoke(
+    #     [HumanMessage(content=user_input)],
+    #     config=config,
+    # )
+    #
     print(f"Output: {response}")
 
     yield response
@@ -78,3 +96,10 @@ async def stream_response(user_input: str):
 
     # Append the assistant's response to the conversation history
     # memory.append({"role": "assistant", "content": response})
+
+@app.post("/chat")
+async def chat(request: Request):
+    request_data = await request.json()
+    user_input = request_data.get("message")
+    response = conversation.run(user_input)
+    return {"response": response}
