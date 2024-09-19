@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {
     Box,
     Button,
@@ -114,8 +114,16 @@ function App() {
         window.location.href = authUrl;
     };
 
+    // Logout function
+    const logout = async () => {
+        const config = await fetchWellKnownConfig();
+        const logoutUrl = `${config.end_session_endpoint}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${LOGOUT_REDIRECT_URI}`;
+        setToken(null); // Clear the token from state
+        window.location.href = logoutUrl; // Redirect to Keycloak logout
+    };
+
     // Handle the OAuth2 callback and exchange the authorization code for tokens
-    const handleCallback = async () => {
+    const handleCallback = useCallback(async () => {
         const code = new URLSearchParams(window.location.search).get("code");
 
         // Retrieve the code verifier from sessionStorage
@@ -148,19 +156,11 @@ function App() {
             window.history.replaceState({}, document.title, window.location.pathname);
             sessionStorage.removeItem("codeVerifier");
         }
-    };
-
-    // Logout function
-    const logout = async () => {
-        const config = await fetchWellKnownConfig();
-        const logoutUrl = `${config.end_session_endpoint}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${LOGOUT_REDIRECT_URI}`;
-        setToken(null); // Clear the token from state
-        window.location.href = logoutUrl; // Redirect to Keycloak logout
-    };
+    }, []);
 
     useEffect(() => {
-        handleCallback(); // Handle callback when the page loads
-    }, []);
+        handleCallback().catch(console.error); // Handle callback when the page loads
+    }, [handleCallback]);
 
     // Function to send the message to the backend
     const sendMessage = async () => {
