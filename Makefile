@@ -10,7 +10,7 @@ up:
 	docker compose --progress=plain up --build -d && \
 	echo "Keycloak is running at http://localhost:8080" && \
 	echo "Backend is running at http://localhost:8000" && \
-	echo "Frontend is running at http://localhost:3000"
+	echo "Frontend is running at http://localhost:3000  (tester:password)"
 
 down:
 	docker-compose down
