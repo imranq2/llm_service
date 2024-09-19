@@ -27,6 +27,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+      - keycloak
 
   keycloak:
     # https://github.com/keycloak/keycloak/releases

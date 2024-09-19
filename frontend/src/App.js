@@ -15,17 +15,34 @@ import {
 // Fetch the environment variable for WELL_KNOWN_URL
 const WELL_KNOWN_URL = process.env.REACT_APP_WELL_KNOWN_URL;
 const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
-const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET;
 const REDIRECT_URI = window.location.origin + "/callback"; // Where Keycloak redirects after login
 const RESPONSE_TYPE = "code";
 const SCOPE = "openid profile email";
 const LOGOUT_REDIRECT_URI = window.location.origin; // Where to redirect after logout
 
+// Utility function to generate a random string (code_verifier)
+const generateRandomString = (length) => {
+  const array = new Uint8Array(length);
+  window.crypto.getRandomValues(array); // Web Crypto API
+  return Array.from(array, (byte) => ("0" + byte.toString(16)).slice(-2)).join("");
+};
+
+// Function to generate the PKCE code challenge based on code verifier using Web Crypto API
+const generateCodeChallenge = async (codeVerifier) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  const digest = await window.crypto.subtle.digest("SHA-256", data); // Web Crypto API for SHA-256 hashing
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+};
 
 function App() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [token, setToken] = useState(null); // To store the token
+  const [codeVerifier, setCodeVerifier] = useState(null); // PKCE Code Verifier
 
   // Fetch the .well-known OpenID Connect configuration
   const fetchWellKnownConfig = async () => {
@@ -34,21 +51,28 @@ function App() {
     return config;
   };
 
-  // Redirect to Keycloak's login page for authentication
+  // Redirect to Keycloak's login page for authentication with PKCE
   const login = async () => {
     const config = await fetchWellKnownConfig();
-    const authorizationUrl = `${config.authorization_endpoint}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`;
+
+    // Generate PKCE code verifier and challenge
+    const newCodeVerifier = generateRandomString(128); // Generate a code verifier
+    setCodeVerifier(newCodeVerifier);
+    const codeChallenge = await generateCodeChallenge(newCodeVerifier); // Generate a code challenge
+
+    // Redirect to Keycloak's authorization endpoint with PKCE parameters
+    const authorizationUrl = `${config.authorization_endpoint}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
     window.location.href = authorizationUrl;
   };
 
   // Handle the OAuth2 callback and exchange the authorization code for tokens
   const handleCallback = async () => {
     const code = new URLSearchParams(window.location.search).get("code");
-    if (code) {
+    if (code && codeVerifier) {
       const config = await fetchWellKnownConfig();
       const tokenUrl = config.token_endpoint;
 
-      // Exchange authorization code for tokens
+      // Exchange authorization code and PKCE code_verifier for tokens
       const response = await fetch(tokenUrl, {
         method: "POST",
         headers: {
@@ -59,7 +83,7 @@ function App() {
           code: code,
           redirect_uri: REDIRECT_URI,
           client_id: CLIENT_ID,
-          client_secret: CLIENT_SECRET, // Replace with your client secret if necessary
+          code_verifier: codeVerifier, // Use the PKCE code_verifier
         }),
       });
       const tokenData = await response.json();
@@ -68,7 +92,7 @@ function App() {
     }
   };
 
-    // Logout function
+  // Logout function
   const logout = async () => {
     const config = await fetchWellKnownConfig();
     const logoutUrl = `${config.end_session_endpoint}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${LOGOUT_REDIRECT_URI}`;
@@ -100,7 +124,7 @@ function App() {
     setInput(""); // Clear the input field
   };
 
-return (
+  return (
     <Container maxWidth="md">
       <Box mt={4} mb={2}>
         <Typography variant="h4" component="h1" align="center">
