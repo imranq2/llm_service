@@ -1,9 +1,16 @@
 version: '3'
 services:
   backend:
+    depends_on:
+      - keycloak
     build: ./backend
     env_file:
       - ./backend/docker.env
+    environment:
+      AUTH_CONFIGURATION_URI: 'http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration'
+      # service account used to connect to OAuth IDP
+      CLIENT_ID: bwell-client-id
+      CLIENT_SECRET: bwell-secret
     volumes:
     - ./backend/:/usr/src/llm_service/
     ports:

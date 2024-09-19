@@ -1,16 +1,50 @@
+import os
 from collections.abc import AsyncGenerator
+from time import sleep
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import requests
+from authlib.integrations.requests_client import OAuth2Session
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2AuthorizationCodeBearer
+from jose import jwt, JWTError
 from langchain.chains.conversation.base import ConversationChain
 from langchain_core.messages import HumanMessage
-
 from langchain_openai import OpenAI
-from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
 from starlette.requests import Request
+from functools import lru_cache
 
 app = FastAPI()
 
+sleep(60)
+# Keycloak Configuration
+WELL_KNOWN_URL = os.getenv("AUTH_CONFIGURATION_URI")
+
+# Cache to store OAuth2 metadata after the first call
+@lru_cache()
+def fetch_well_known_config():
+    """
+    Fetch OAuth2/OpenID Connect configuration from Keycloak's well-known endpoint.
+    This will cache the configuration for subsequent calls.
+    """
+    response = requests.get(WELL_KNOWN_URL)
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to fetch well-known configuration")
+    return response.json()
+
+# Function to get OAuth2 URLs on demand
+def get_oauth2_urls():
+    config = fetch_well_known_config()
+    return {
+        "authorization_endpoint": config["authorization_endpoint"],
+        "token_endpoint": config["token_endpoint"],
+        "jwks_uri": config["jwks_uri"],
+        "issuer": config["issuer"]
+    }
+
 # Add CORS middleware
+# noinspection PyTypeChecker
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Allows your frontend origin
@@ -103,3 +137,35 @@ async def chat(request: Request):
     user_input = request_data.get("message")
     response = conversation.run(user_input)
     return {"response": response}
+
+
+async def get_current_user(token: str = Depends(OAuth2AuthorizationCodeBearer(
+    authorizationUrl=lambda: get_oauth2_urls()["authorization_endpoint"],
+    tokenUrl=lambda: get_oauth2_urls()["token_endpoint"]
+))):
+    try:
+        # Fetch JWKS (public keys) for token verification
+        jwks_url = get_oauth2_urls()["jwks_uri"]
+        jwks_client = OAuth2Session(client_id="your-client-id")
+        jwks = jwks_client.get(jwks_url).json()
+
+        # Decode JWT token
+        header = jwt.get_unverified_header(token)
+        rsa_key = next(
+            key for key in jwks['keys']
+            if key["kid"] == header["kid"]
+        )
+        payload = jwt.decode(
+            token,
+            key=rsa_key,
+            audience="your-client-id",
+            algorithms=['RS256'],
+            issuer=get_oauth2_urls()["issuer"],
+        )
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/protected")
+async def protected_route(user=Depends(get_current_user)):
+    return {"message": "Welcome to the protected route", "user": user}
