@@ -166,44 +166,72 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${CLIENT_SECRET}",
-      "redirectUris": ["*"],
-      "webOrigins": ["*"],
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": true,
-      "authorizationServicesEnabled": true,
-      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "publicClient": true,
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "attributes": {
-        "client.secret.creation.time": "1718982319",
-        "post.logout.redirect.uris": "+"
+        "post.logout.redirect.uris": "+",
+        "oauth2.device.authorization.grant.enabled": false,
+        "oidc.ciba.grant.enabled": false,
+        "login_theme": "",
+        "display.on.consent.screen": "false",
+        "consent.screen.text": "",
+        "backchannel.logout.url": "",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "logoUri": "",
+        "policyUri": "",
+        "tosUri": "",
+        "access.token.signed.response.alg": "",
+        "id.token.signed.response.alg": "",
+        "id.token.encrypted.response.alg": "",
+        "id.token.encrypted.response.enc": "",
+        "user.info.response.signature.alg": "",
+        "user.info.encrypted.response.alg": "",
+        "user.info.encrypted.response.enc": "",
+        "request.object.signature.alg": "",
+        "request.object.encryption.alg": "",
+        "request.object.encryption.enc": "",
+        "request.object.required": "",
+        "authorization.signed.response.alg": "",
+        "authorization.encrypted.response.alg": "",
+        "authorization.encrypted.response.enc": "",
+        "exclude.session.state.from.auth.response": "",
+        "exclude.issuer.from.auth.response": "",
+        "use.refresh.tokens": "true",
+        "client_credentials.use_refresh_token": "false",
+        "token.response.type.bearer.lower-case": "false",
+        "access.token.lifespan": "",
+        "client.session.idle.timeout": "",
+        "client.session.max.lifespan": "",
+        "client.offline.session.idle.timeout": "",
+        "tls.client.certificate.bound.access.tokens": "false",
+        "pkce.code.challenge.method": "S256",
+        "require.pushed.authorization.requests": "false",
+        "client.use.lightweight.access.token.enabled": "false",
+        "client.introspection.response.allow.jwt.claim.enabled": "false",
+        "acr.loa.map": "{}"
       },
-      "authenticationFlowBindingOverrides": {},
+      "authenticationFlowBindingOverrides": {
+        "browser": "",
+        "direct_grant": ""
+      },
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
-      "defaultClientScopes": [
-        "web-origins",
-        "roles",
-        "profile",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "user/*.*",
-        "access/*.*"
-      ],
-      "authorizationSettings": {
-        "allowRemoteResourceManagement": true,
-        "resources": [],
-        "policies": [],
-        "scopes": [],
-        "decisionStrategy": "UNANIMOUS"
-      },
       "protocolMappers": [
         {
           "name": "cognito-groups-mapper",
@@ -211,40 +239,26 @@
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
           "config": {
-            "user.attribute": "cognito:groups",
-            "claim.name": "cognito:groups",
-            "jsonType.label": "String",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
             "userinfo.token.claim": "true",
-            "multivalued": "true"
+            "multivalued": "true",
+            "user.attribute": "cognito:groups",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "cognito:groups",
+            "jsonType.label": "String"
           }
         },
         {
-          "name": "client-person-mapper",
+          "name": "custom-scope-mapper",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
           "config": {
-            "user.attribute": "clientFhirPersonId",
-            "claim.name": "clientFhirPersonId",
-            "jsonType.label": "String",
+            "user.attribute": "custom:scope",
             "id.token.claim": "true",
             "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "client-patient-mapper",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "user.attribute": "clientFhirPatientId",
-            "claim.name": "clientFhirPatientId",
+            "claim.name": "custom:scope",
             "jsonType.label": "String",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
             "userinfo.token.claim": "true"
           }
         },
@@ -255,10 +269,10 @@
           "consentRequired": false,
           "config": {
             "user.attribute": "bwellFhirPersonId",
-            "claim.name": "bwellFhirPersonId",
-            "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "true",
+            "claim.name": "bwellFhirPersonId",
+            "jsonType.label": "String",
             "userinfo.token.claim": "true"
           }
         },
@@ -269,10 +283,24 @@
           "consentRequired": false,
           "config": {
             "user.attribute": "bwellFhirPatientId",
-            "claim.name": "bwellFhirPatientId",
-            "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "true",
+            "claim.name": "bwellFhirPatientId",
+            "jsonType.label": "String",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "client-patient-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "clientFhirPatientId",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clientFhirPatientId",
+            "jsonType.label": "String",
             "userinfo.token.claim": "true"
           }
         },
@@ -283,10 +311,10 @@
           "consentRequired": false,
           "config": {
             "user.attribute": "token_use",
-            "claim.name": "token_use",
-            "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "true",
+            "claim.name": "token_use",
+            "jsonType.label": "String",
             "userinfo.token.claim": "true"
           }
         },
@@ -297,28 +325,44 @@
           "consentRequired": false,
           "config": {
             "user.attribute": "username",
-            "claim.name": "username",
-            "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "true",
+            "claim.name": "username",
+            "jsonType.label": "String",
             "userinfo.token.claim": "true"
           }
         },
         {
-          "name": "custom-scope-mapper",
+          "name": "client-person-mapper",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
           "config": {
-            "user.attribute": "custom:scope",
-            "claim.name": "custom:scope",
-            "jsonType.label": "String",
+            "user.attribute": "clientFhirPersonId",
             "id.token.claim": "true",
             "access.token.claim": "true",
+            "claim.name": "clientFhirPersonId",
+            "jsonType.label": "String",
             "userinfo.token.claim": "true"
           }
         }
-      ]
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [],
+      "access": {
+        "view": true,
+        "configure": true,
+        "manage": true
+      },
+      "description": "",
+      "rootUrl": "",
+      "baseUrl": "",
+      "adminUrl": ""
     }
   ]
 }

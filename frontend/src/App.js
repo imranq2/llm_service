@@ -15,6 +15,7 @@ import {
 // Fetch the environment variable for WELL_KNOWN_URL
 const WELL_KNOWN_URL = process.env.REACT_APP_WELL_KNOWN_URL;
 const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
+// const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET;
 const REDIRECT_URI = window.location.origin + "/callback"; // Where Keycloak redirects after login
 const RESPONSE_TYPE = "code";
 const SCOPE = "openid profile email";
@@ -64,12 +65,12 @@ function App() {
      const authUrl = `${config.authorization_endpoint}` +
       `?client_id=${CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&response_type=code` +
-      `&scope=openid` +
+      `&response_type=${RESPONSE_TYPE}` +
+      `&scope=${SCOPE}` +
       `&code_challenge=${codeChallenge}` +
       `&code_challenge_method=S256`;
 
-    console.log(`Authorization URL: ${authUrl}`);
+    window.alert(`Authorization URL: ${authUrl}, codeVerifier: ${newCodeVerifier}`);
     // Redirect to Keycloak's authorization endpoint with PKCE parameters
     window.location.href = authUrl;
   };
@@ -97,6 +98,7 @@ function App() {
           code: code,
           redirect_uri: REDIRECT_URI,
           client_id: CLIENT_ID,
+          //client_secret: CLIENT_SECRET,
           code_verifier: storedCodeVerifier, // Use the PKCE code_verifier from sessionStorage
         }),
       });
