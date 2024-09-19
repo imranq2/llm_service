@@ -21,8 +21,7 @@ services:
     environment:
       # This has to be local host since the call is coming from the browser
       REACT_APP_WELL_KNOWN_URL: 'http://localhost:8080/realms/bwell-realm/.well-known/openid-configuration'
-      REACT_APP_CLIENT_ID: bwell-client-id
-      REACT_APP_CLIENT_SECRET: bwell-secret
+      REACT_APP_CLIENT_ID: bwell-public-client-id
     ports:
       - "3000:3000"
     depends_on:
@@ -32,19 +31,9 @@ services:
   keycloak:
     # https://github.com/keycloak/keycloak/releases
     image: quay.io/keycloak/keycloak:25.0.1
-#    container_name: keycloak
-#    build:
-#      dockerfile: keycloak.Dockerfile
-#      context: .
-#    depends_on:
-#      - postgres
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: password
-#      KC_DB: postgres
-#      KC_DB_URL: jdbc:postgresql://postgres/pdb
-#      KC_DB_USERNAME: admin
-#      KC_DB_PASSWORD: admin
       # The below settings are for test data creation
       # This is the user and password that will be created in the realm
       MY_ADMIN_USER_NAME: admin
@@ -62,6 +51,8 @@ services:
       # This is the client setup
       CLIENT_ID: bwell-client-id
       CLIENT_SECRET: bwell-secret
+      # This is the public client used in PKCE
+      PUBLIC_CLIENT_ID: bwell-public-client-id
       # This is the service account that will be created in the realm
       SERVICE_ACCOUNT_NAME: service-account
       SERVICE_ACCOUNT_SCOPE: user/*.* access/*.*

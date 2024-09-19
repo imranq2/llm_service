@@ -8,6 +8,7 @@ update: down Pipfile.lock  ## Updates all the packages using Pipfile
 
 up:
 	docker compose --progress=plain up --build -d && \
+	echo "Keycloak is running at http://localhost:8080" && \
 	echo "Backend is running at http://localhost:8000" && \
 	echo "Frontend is running at http://localhost:3000"
 
