@@ -50,12 +50,52 @@ function App() {
     return await response.json();
   };
 
-  // Redirect to Keycloak's login page for authentication with PKCE
+  /* PKCE Authorization Flow:
+    1. Client Generates a Code Verifier:
+      The client (React app, mobile app, etc.) generates a code_verifier, which is a random string
+      between 43 and 128 characters. This will be used later in the process to verify the authenticity
+      of the request.
+     2. Client Derives a Code Challenge:
+      The client creates a code_challenge by hashing the code_verifier using SHA-256 and then Base64 URL encoding
+      the result (to make it safe for URLs). If the client doesn't want to use SHA-256, it can also use the plain
+      code_verifier as the challenge.
+     3. Client Sends Authorization Request:
+      The client redirects the user to the authorization server (e.g., Keycloak) with the following parameters in the URL:
+          response_type=code: Indicates this is an authorization code flow.
+          client_id: The client’s ID in the authorization server.
+          redirect_uri: Where the authorization server should send the user back after authentication.
+          code_challenge: The derived code challenge.
+          code_challenge_method: Set to S256 to indicate SHA-256 is used, or plain if no hashing is used.
+          scope: The scope of access requested (e.g., openid, profile).
+     4. User Authenticates:
+      The user is prompted to log in to the authorization server (e.g., Keycloak). After successful authentication,
+      the authorization server generates an authorization code.
+     5. Authorization Server Redirects Back:
+      The authorization server redirects the user back to the client’s redirect_uri with the authorization code
+       included in the URL.
+     6. Client Exchanges Code for Access Token:
+      The client now takes the authorization code and exchanges it for an access token by making a POST request to
+      the authorization server’s token endpoint. This request includes:
+        grant_type=authorization_code: Specifies the grant type.
+        client_id: The client ID.
+        code: The authorization code obtained in step 5.
+        redirect_uri: Must be the same as the one used in step 3.
+        code_verifier: The original random string generated in step 1.
+      7. Authorization Server Verifies the Code Challenge:
+        The authorization server retrieves the original code_challenge from step 3 and computes a new hash
+        from the code_verifier received in step 6. It compares the computed challenge with the stored challenge:
+            If the computed challenge matches the stored challenge, the server issues an access token.
+            If the verification fails, the request is rejected.
+      8. Client Receives Access Token:
+        If the code_verifier is valid and the exchange is successful, the authorization server responds with an
+        access token and (optionally) a refresh token.
+*/
+
   const login = async () => {
     const config = await fetchWellKnownConfig();
 
     // Generate PKCE code verifier and challenge
-    const newCodeVerifier = generateRandomString(128); // Generate a code verifier
+    const newCodeVerifier = "rnnc29a4Y3rno5wBJtzeBDjGZ4_8cq3phG4PpnaIs7s";
 
     // Store the code verifier in sessionStorage for later use
     sessionStorage.setItem("codeVerifier", newCodeVerifier);
@@ -65,7 +105,7 @@ function App() {
      const authUrl = `${config.authorization_endpoint}` +
       `?client_id=${CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&response_type=${RESPONSE_TYPE}` +
+      // `&response_type=${RESPONSE_TYPE}` +
       `&scope=${SCOPE}` +
       `&code_challenge=${codeChallenge}` +
       `&code_challenge_method=S256`;
