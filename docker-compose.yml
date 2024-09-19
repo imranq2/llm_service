@@ -22,6 +22,7 @@ services:
       # This has to be local host since the call is coming from the browser
       REACT_APP_WELL_KNOWN_URL: 'http://localhost:8080/realms/bwell-realm/.well-known/openid-configuration'
       REACT_APP_CLIENT_ID: bwell-client-id
+      REACT_APP_CLIENT_SECRET: bwell-secret
     ports:
       - "3000:3000"
     depends_on:

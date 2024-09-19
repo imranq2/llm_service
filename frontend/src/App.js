@@ -15,9 +15,12 @@ import {
 // Fetch the environment variable for WELL_KNOWN_URL
 const WELL_KNOWN_URL = process.env.REACT_APP_WELL_KNOWN_URL;
 const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
+const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET;
 const REDIRECT_URI = window.location.origin + "/callback"; // Where Keycloak redirects after login
 const RESPONSE_TYPE = "code";
 const SCOPE = "openid profile email";
+const LOGOUT_REDIRECT_URI = window.location.origin; // Where to redirect after logout
+
 
 function App() {
   const [input, setInput] = useState("");
@@ -56,13 +59,21 @@ function App() {
           code: code,
           redirect_uri: REDIRECT_URI,
           client_id: CLIENT_ID,
-          client_secret: "your-client-secret", // Replace with your client secret if necessary
+          client_secret: CLIENT_SECRET, // Replace with your client secret if necessary
         }),
       });
       const tokenData = await response.json();
       setToken(tokenData.access_token); // Store the access token
       window.history.replaceState({}, document.title, window.location.pathname); // Clear query params
     }
+  };
+
+    // Logout function
+  const logout = async () => {
+    const config = await fetchWellKnownConfig();
+    const logoutUrl = `${config.end_session_endpoint}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${LOGOUT_REDIRECT_URI}`;
+    setToken(null); // Clear the token from state
+    window.location.href = logoutUrl; // Redirect to Keycloak logout
   };
 
   useEffect(() => {
@@ -89,7 +100,7 @@ function App() {
     setInput(""); // Clear the input field
   };
 
-  return (
+return (
     <Container maxWidth="md">
       <Box mt={4} mb={2}>
         <Typography variant="h4" component="h1" align="center">
@@ -106,6 +117,13 @@ function App() {
         </Box>
       ) : (
         <>
+          {/* Logout Button */}
+          <Box textAlign="center" mt={4}>
+            <Button variant="contained" color="secondary" onClick={logout}>
+              Logout
+            </Button>
+          </Box>
+
           {/* Chat window */}
           <Paper elevation={3} sx={{ padding: 2, height: "400px", overflowY: "auto" }}>
             <List>

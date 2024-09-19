@@ -1,0 +1,8 @@
+{
+  "esversion": 8,
+  "globals": {
+    "window": true,
+    "document": true,
+    "fetch": true
+  }
+}
