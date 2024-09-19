@@ -20,14 +20,22 @@ const RESPONSE_TYPE = "code";
 const SCOPE = "openid profile email";
 const LOGOUT_REDIRECT_URI = window.location.origin; // Where to redirect after logout
 
-// Utility function to generate a random string (code_verifier)
+/**
+ * Generate a random string
+ * @param {number} length
+ * @return {string}
+ */
 const generateRandomString = (length) => {
     const array = new Uint32Array(length);
     window.crypto.getRandomValues(array);
     return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('').substring(0, 128);  // Truncate if necessary
 };
 
-// Function to generate the PKCE code challenge based on code verifier using Web Crypto API
+/**
+ * Generate the PKCE code challenge based on code verifier using Web Crypto API
+ * @param {string} codeVerifier
+ * @return {Promise<string>}
+ */
 const generateCodeChallenge = async (codeVerifier) => {
     const encoder = new TextEncoder();
     const data = encoder.encode(codeVerifier);
@@ -40,10 +48,14 @@ const generateCodeChallenge = async (codeVerifier) => {
 
 function App() {
     const [input, setInput] = useState("");
-    const [messages, setMessages] = useState([]);
+    const [/** @type {Object[]} */ messages, setMessages] = useState([]);
     const [token, setToken] = useState(null); // To store the token
 
     // Fetch the .well-known OpenID Connect configuration
+    /**
+     * Fetch the .well-known OpenID Connect configuration
+     * @return {Promise<{authorization_endpoint: string, end_session_endpoint: string, token_endpoint: string}>}
+     */
     const fetchWellKnownConfig = async () => {
         const response = await fetch(WELL_KNOWN_URL);
         return await response.json();
@@ -90,6 +102,10 @@ function App() {
           access token and (optionally) a refresh token.
   */
 
+    /**
+     * Login function
+     * @return {Promise<void>}
+     */
     const login = async () => {
         const config = await fetchWellKnownConfig();
 
@@ -101,6 +117,7 @@ function App() {
 
         const codeChallenge = await generateCodeChallenge(newCodeVerifier); // Generate a code challenge
 
+        // noinspection UnnecessaryLocalVariableJS
         const authUrl = `${config.authorization_endpoint}` +
             `?client_id=${CLIENT_ID}` +
             `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
@@ -109,12 +126,14 @@ function App() {
             `&code_challenge=${codeChallenge}` +
             `&code_challenge_method=S256`;
 
-        window.alert(`Authorization URL: ${authUrl}, codeVerifier: ${newCodeVerifier}`);
-        // Redirect to Keycloak's authorization endpoint with PKCE parameters
+        // window.alert(`Authorization URL: ${authUrl}, codeVerifier: ${newCodeVerifier}`);
         window.location.href = authUrl;
     };
 
-    // Logout function
+    /**
+     * Logout function
+     * @return {Promise<void>}
+     */
     const logout = async () => {
         const config = await fetchWellKnownConfig();
         const logoutUrl = `${config.end_session_endpoint}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${LOGOUT_REDIRECT_URI}`;
@@ -122,7 +141,10 @@ function App() {
         window.location.href = logoutUrl; // Redirect to Keycloak logout
     };
 
-    // Handle the OAuth2 callback and exchange the authorization code for tokens
+    /**
+     * Handle the OAuth2 callback and exchange the authorization code for tokens
+     * @type {(function(): Promise<void>)|*}
+     */
     const handleCallback = useCallback(async () => {
         const code = new URLSearchParams(window.location.search).get("code");
 
@@ -149,6 +171,9 @@ function App() {
                 }),
             });
 
+            /**
+             * @type {{access_token: string, expires_in: number, refresh_expires_in: number, refresh_token: string, token_type: string}}
+             */
             const tokenData = await response.json();
             setToken(tokenData.access_token); // Store the access token
 
@@ -162,7 +187,10 @@ function App() {
         handleCallback().catch(console.error); // Handle callback when the page loads
     }, [handleCallback]);
 
-    // Function to send the message to the backend
+    /**
+     * Send the message to the backend
+     * @return {Promise<void>}
+     */
     const sendMessage = async () => {
         if (!token) {
             alert("You must log in first!");
