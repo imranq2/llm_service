@@ -1,4 +1,5 @@
 import os
+import time
 from collections.abc import AsyncGenerator
 from time import sleep
 
@@ -6,42 +7,53 @@ import requests
 from authlib.integrations.requests_client import OAuth2Session
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi import WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from jose import jwt, JWTError
 from langchain.chains.conversation.base import ConversationChain
 from langchain_core.messages import HumanMessage
 from langchain_openai import OpenAI
 from starlette.requests import Request
-from functools import lru_cache
 
 app = FastAPI()
 
-sleep(60)
 # Keycloak Configuration
 WELL_KNOWN_URL = os.getenv("AUTH_CONFIGURATION_URI")
 
-# Cache to store OAuth2 metadata after the first call
-@lru_cache()
-def fetch_well_known_config():
-    """
-    Fetch OAuth2/OpenID Connect configuration from Keycloak's well-known endpoint.
-    This will cache the configuration for subsequent calls.
-    """
-    response = requests.get(WELL_KNOWN_URL)
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to fetch well-known configuration")
-    return response.json()
+def get_well_known_url(well_known_url, timeout=60, sleep_interval=5):
+    start_time = time.time()
 
-# Function to get OAuth2 URLs on demand
-def get_oauth2_urls():
-    config = fetch_well_known_config()
-    return {
-        "authorization_endpoint": config["authorization_endpoint"],
-        "token_endpoint": config["token_endpoint"],
-        "jwks_uri": config["jwks_uri"],
-        "issuer": config["issuer"]
-    }
+    while True:
+        try:
+            response = requests.get(well_known_url)
+            response.raise_for_status()  # Raises an HTTPError if the response code was unsuccessful (e.g., 4xx, 5xx)
+            return response.json()  # Return the JSON data once the request is successful
+        except requests.RequestException as e:
+            elapsed_time = time.time() - start_time
+            if elapsed_time > timeout:
+                raise TimeoutError(f"Failed to fetch {well_known_url} after {timeout} seconds.") from e
+            print(f"Request failed: {e}. Retrying in {sleep_interval} seconds...")
+            time.sleep(sleep_interval)
+
+# Fetch OpenID Connect configuration dynamically
+oidc_config = {}
+try:
+    oidc_config = get_well_known_url(WELL_KNOWN_URL)
+    print("Successfully fetched .well-known configuration:", oidc_config)
+except TimeoutError as e:
+    print(e)
+
+print(oidc_config)
+
+ISSUER_URL = oidc_config['issuer']
+AUTHORIZATION_URL = oidc_config['authorization_endpoint']
+TOKEN_URL = oidc_config['token_endpoint']
+JWKS_URL = oidc_config['jwks_uri']
+
+oauth2_scheme = OAuth2AuthorizationCodeBearer(
+    authorizationUrl=AUTHORIZATION_URL,
+    tokenUrl=TOKEN_URL
+)
 
 # Add CORS middleware
 # noinspection PyTypeChecker
@@ -138,16 +150,11 @@ async def chat(request: Request):
     response = conversation.run(user_input)
     return {"response": response}
 
-
-async def get_current_user(token: str = Depends(OAuth2AuthorizationCodeBearer(
-    authorizationUrl=lambda: get_oauth2_urls()["authorization_endpoint"],
-    tokenUrl=lambda: get_oauth2_urls()["token_endpoint"]
-))):
+async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        # Fetch JWKS (public keys) for token verification
-        jwks_url = get_oauth2_urls()["jwks_uri"]
+        # Fetch JWKS keys from Keycloak
         jwks_client = OAuth2Session(client_id="your-client-id")
-        jwks = jwks_client.get(jwks_url).json()
+        jwks = jwks_client.get(JWKS_URL).json()
 
         # Decode JWT token
         header = jwt.get_unverified_header(token)
@@ -160,7 +167,7 @@ async def get_current_user(token: str = Depends(OAuth2AuthorizationCodeBearer(
             key=rsa_key,
             audience="your-client-id",
             algorithms=['RS256'],
-            issuer=get_oauth2_urls()["issuer"],
+            issuer=ISSUER_URL,
         )
         return payload
     except JWTError:
