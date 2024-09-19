@@ -3,10 +3,6 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
-[dev-packages]
-# pytest is a framework that makes it easy to write small tests, yet scales to support complex functional testing for applications and libraries.
-pytest = ">=8.3.2"
-
 [packages]
 # FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints.
 fastapi = ">=0.112.2"
@@ -20,6 +16,14 @@ langchain-community = ">=0.3.0"
 langchain-openai = ">=0.2.0"
 # uvicorn is a lightning-fast ASGI server implementation, using uvloop and httptools.
 uvicorn = { version = ">=0.30.6", extras = ["standard"] }
+# authlib is a Python library for OAuth 1, OAuth 2, OpenID Connect, and JWT
+authlib = ">=1.3.2"
+# python-jose is a Python library for JOSE (JSON Web Signatures, JSON Web Tokens, JSON Web Encryption)
+python-jose = { version = ">=3.3.0", extras = ["cryptography"] }
+
+[dev-packages]
+# pytest is a framework that makes it easy to write small tests, yet scales to support complex functional testing for applications and libraries.
+pytest = ">=8.3.2"
 
 [requires]
 python_version = "3.12"
