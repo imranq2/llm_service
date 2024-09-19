@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import {
-  Container,
   Box,
-  TextField,
   Button,
-  Typography,
-  Paper,
+  Container,
+  Divider,
   List,
   ListItem,
   ListItemText,
-  Divider,
+  Paper,
+  TextField,
+  Typography,
 } from "@mui/material";
 
 // Fetch the environment variable for WELL_KNOWN_URL
@@ -47,8 +47,7 @@ function App() {
   // Fetch the .well-known OpenID Connect configuration
   const fetchWellKnownConfig = async () => {
     const response = await fetch(WELL_KNOWN_URL);
-    const config = await response.json();
-    return config;
+    return await response.json();
   };
 
   // Redirect to Keycloak's login page for authentication with PKCE
@@ -61,13 +60,13 @@ function App() {
     const codeChallenge = await generateCodeChallenge(newCodeVerifier); // Generate a code challenge
 
     // Redirect to Keycloak's authorization endpoint with PKCE parameters
-    const authorizationUrl = `${config.authorization_endpoint}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
-    window.location.href = authorizationUrl;
+    window.location.href = `${config.authorization_endpoint}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
   };
 
   // Handle the OAuth2 callback and exchange the authorization code for tokens
   const handleCallback = async () => {
     const code = new URLSearchParams(window.location.search).get("code");
+    console.log(`Authorization code: ${code} codeVerifier: ${codeVerifier}`);
     if (code && codeVerifier) {
       const config = await fetchWellKnownConfig();
       const tokenUrl = config.token_endpoint;
@@ -102,7 +101,7 @@ function App() {
 
   useEffect(() => {
     handleCallback(); // Handle callback when the page loads
-  }, []);
+  }, [handleCallback]);
 
   // Function to send the message to the backend
   const sendMessage = async () => {
@@ -179,7 +178,7 @@ function App() {
               variant="outlined"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()} // Send message on Enter key
+              onKeyUp={(e) => e.key === "Enter" && sendMessage()} // Send message on Enter key
               multiline  // Allow multiple lines
               minRows={2}   // Minimum number of rows
               maxRows={5}   // Maximum number of rows
