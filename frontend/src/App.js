@@ -105,7 +105,7 @@ function App() {
      const authUrl = `${config.authorization_endpoint}` +
       `?client_id=${CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      // `&response_type=${RESPONSE_TYPE}` +
+      `&response_type=${RESPONSE_TYPE}` +
       `&scope=${SCOPE}` +
       `&code_challenge=${codeChallenge}` +
       `&code_challenge_method=S256`;
@@ -139,7 +139,7 @@ function App() {
           redirect_uri: REDIRECT_URI,
           client_id: CLIENT_ID,
           //client_secret: CLIENT_SECRET,
-          code_verifier: storedCodeVerifier, // Use the PKCE code_verifier from sessionStorage
+          code_verifier: "rnnc29a4Y3rno5wBJtzeBDjGZ4_8cq3phG4PpnaIs7s", // Use the PKCE code_verifier from sessionStorage
         }),
       });
 
