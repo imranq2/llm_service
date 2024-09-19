@@ -42,7 +42,6 @@ function App() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [token, setToken] = useState(null); // To store the token
-  const [codeVerifier, setCodeVerifier] = useState(null); // PKCE Code Verifier
 
   // Fetch the .well-known OpenID Connect configuration
   const fetchWellKnownConfig = async () => {
@@ -56,18 +55,34 @@ function App() {
 
     // Generate PKCE code verifier and challenge
     const newCodeVerifier = generateRandomString(128); // Generate a code verifier
-    setCodeVerifier(newCodeVerifier);
+
+    // Store the code verifier in sessionStorage for later use
+    sessionStorage.setItem("codeVerifier", newCodeVerifier);
+
     const codeChallenge = await generateCodeChallenge(newCodeVerifier); // Generate a code challenge
 
+     const authUrl = `${config.authorization_endpoint}` +
+      `?client_id=${CLIENT_ID}` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+      `&response_type=code` +
+      `&scope=openid` +
+      `&code_challenge=${codeChallenge}` +
+      `&code_challenge_method=S256`;
+
+    console.log(`Authorization URL: ${authUrl}`);
     // Redirect to Keycloak's authorization endpoint with PKCE parameters
-    window.location.href = `${config.authorization_endpoint}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    window.location.href = authUrl;
   };
 
   // Handle the OAuth2 callback and exchange the authorization code for tokens
   const handleCallback = async () => {
     const code = new URLSearchParams(window.location.search).get("code");
-    console.log(`Authorization code: ${code} codeVerifier: ${codeVerifier}`);
-    if (code && codeVerifier) {
+
+    // Retrieve the code verifier from sessionStorage
+    const storedCodeVerifier = sessionStorage.getItem("codeVerifier");
+
+    console.log(`Authorization code: ${code}, codeVerifier: ${storedCodeVerifier}`);
+    if (code && storedCodeVerifier) {
       const config = await fetchWellKnownConfig();
       const tokenUrl = config.token_endpoint;
 
@@ -82,12 +97,16 @@ function App() {
           code: code,
           redirect_uri: REDIRECT_URI,
           client_id: CLIENT_ID,
-          code_verifier: codeVerifier, // Use the PKCE code_verifier
+          code_verifier: storedCodeVerifier, // Use the PKCE code_verifier from sessionStorage
         }),
       });
+
       const tokenData = await response.json();
       setToken(tokenData.access_token); // Store the access token
-      window.history.replaceState({}, document.title, window.location.pathname); // Clear query params
+
+      // Clear query params and remove codeVerifier from sessionStorage after successful login
+      window.history.replaceState({}, document.title, window.location.pathname);
+      sessionStorage.removeItem("codeVerifier");
     }
   };
 
@@ -101,7 +120,7 @@ function App() {
 
   useEffect(() => {
     handleCallback(); // Handle callback when the page loads
-  }, [handleCallback]);
+  }, []);
 
   // Function to send the message to the backend
   const sendMessage = async () => {
