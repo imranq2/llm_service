@@ -7,7 +7,9 @@ update: down Pipfile.lock  ## Updates all the packages using Pipfile
 	make build_backend
 
 up:
-	docker compose --progress=plain up --build -d
+	docker compose --progress=plain up --build -d && \
+	echo "Backend is running at http://localhost:8000" && \
+	echo "Frontend is running at http://localhost:3000"
 
 down:
 	docker-compose down
