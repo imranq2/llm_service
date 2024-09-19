@@ -167,7 +167,7 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "${CLIENT_SECRET}",
-      "redirectUris": [],
+      "redirectUris": ["*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
