@@ -1,6 +1,8 @@
 import os
 import time
+import traceback
 from collections.abc import AsyncGenerator
+from typing import Any, Dict
 
 import requests
 from authlib.integrations.requests_client import OAuth2Session
@@ -20,6 +22,7 @@ app = FastAPI()
 WELL_KNOWN_URL = os.getenv("AUTH_CONFIGURATION_URI")
 CLIENT_ID = os.getenv("CLIENT_ID")
 
+
 def get_well_known_url(well_known_url, timeout=60, sleep_interval=5):
     start_time = time.time()
 
@@ -34,6 +37,7 @@ def get_well_known_url(well_known_url, timeout=60, sleep_interval=5):
                 raise TimeoutError(f"Failed to fetch {well_known_url} after {timeout} seconds.") from error
             print(f"Request failed: {error}. Retrying in {sleep_interval} seconds...")
             time.sleep(sleep_interval)
+
 
 # Fetch OpenID Connect configuration dynamically
 oidc_config = {}
@@ -87,18 +91,27 @@ with_message_history = RunnableWithMessageHistory(model, get_session_history)
 
 conversation = ConversationChain(llm=model)
 
-async def get_current_user(*, token: str):
+
+async def get_current_user(*, token: str) -> Dict[str, Any]:
     try:
+        assert token
         # Fetch JWKS keys from Keycloak
-        jwks_client = OAuth2Session(client_id=CLIENT_ID)
-        jwks = jwks_client.get(JWKS_URL).json()
+        response = requests.get(JWKS_URL)
+        response.raise_for_status()  # Raises an HTTPError if the response code was unsuccessful (e.g., 4xx, 5xx)
+        jwks = response.json()
+
+        print(f"JWKS: {jwks}")
+        print(f"Token: {token}")
 
         # Decode JWT token
         header = jwt.get_unverified_header(token)
+        print(f"Header: {header}")
         rsa_key = next(
             key for key in jwks['keys']
             if key["kid"] == header["kid"]
         )
+        print("ISSUER_URL: ", ISSUER_URL)
+        print("CLIENT_ID: ", CLIENT_ID)
         payload = jwt.decode(
             token,
             key=rsa_key,
@@ -106,9 +119,11 @@ async def get_current_user(*, token: str):
             algorithms=['RS256'],
             issuer=ISSUER_URL,
         )
+        print(f"Payload: {payload}")
         return payload
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -169,6 +184,7 @@ async def stream_response(user_input: str) -> AsyncGenerator[str, None]:
 
 async def extract_token(*, request: Request) -> str:
     auth_header = request.headers.get("Authorization")
+    print(f"Authorization header: {auth_header}")
     if not auth_header:
         raise HTTPException(status_code=401, detail="Authorization header missing")
 
@@ -200,8 +216,12 @@ async def chat(request: Request):
         print(f"Response: {response}, User: {user}")
         return {"response": response, "user": user}
     except Exception as error:
-        print(f"Error: {error}")
-        return {"error": str(error)}
+        error_message = str(error)
+        call_stack = traceback.format_exc()  # Capture the call stack
+        print(f"Error in chat: {error_message}")
+        print(call_stack)  # Print the call stack to the console
+        return {"error": error_message, "call_stack": call_stack}  # Return the call stack in the response
+
 
 @app.get("/protected")
 async def protected_route(user=Depends(get_current_user)):
