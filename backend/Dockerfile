@@ -1,12 +1,11 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim
+# Use an official Python runtime based on Alpine as a parent image
+FROM python:3.12-alpine
 
 # Install pipenv, a tool for managing Python project dependencies
 RUN pip install pipenv
 
 # Set the working directory in the container
 WORKDIR /usr/src/llm_service/
-
 
 COPY Pipfile* .
 

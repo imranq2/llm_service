@@ -15,6 +15,11 @@ services:
     - ./backend/:/usr/src/llm_service/
     ports:
       - "8000:8000"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build: ./frontend
@@ -27,6 +32,11 @@ services:
     depends_on:
       - backend
       - keycloak
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   keycloak:
     # https://github.com/keycloak/keycloak/releases
