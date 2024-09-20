@@ -49,7 +49,7 @@ except TimeoutError as e:
 
 # print(oidc_config)
 
-ISSUER_URL = oidc_config['issuer']
+ISSUER_URL = os.getenv("ISSUER_URI", oidc_config['issuer'])
 AUTHORIZATION_URL = oidc_config['authorization_endpoint']
 TOKEN_URL = oidc_config['token_endpoint']
 JWKS_URL = oidc_config['jwks_uri']
